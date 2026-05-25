@@ -1,32 +1,43 @@
-name: Terraform Deploy
-
+name: 'Terragrunt Plan'
 on:
-  push:
+  pull_request:
     branches:
       - main
-  workflow_dispatch:
+
+env:
+  tg_version: '0.67.0'
+  tf_version: '1.8.5'
+  working_dir: 'teratest'
+  GITHUB_TOKEN: ${{ secrets.TRF }}
 
 permissions:
-  id-token: write
+  actions: write       # Necessary to cancel workflow executions
+  checks: write        # Necessary to write reports
+  pull-requests: write # Necessary to comment on PRs
   contents: read
+  packages: write
 
 jobs:
-  terraform:
+  plan:
     runs-on: ubuntu-latest
-
+    name: 'Terragrunt Check and Plan'
     steps:
-      - name: Checkout repo
+      - name: 'Checkout'
         uses: actions/checkout@v4
 
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
-        run: terraform plan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+      - name: Check HCL
+        uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tf_version: ${{env.tf_version}}
+          tg_version: ${{env.tg_version}}
+          tg_dir: ${{env.working_dir}}
+          tg_command: 'hclfmt --terragrunt-check'
+      
+      - name: Plan
+        uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tf_version: ${{env.tf_version}}
+          tg_version: ${{env.tg_version}}
+          tg_dir: ${{env.working_dir}}        
+          tg_command: 'plan'
+          tg_comment: 1
