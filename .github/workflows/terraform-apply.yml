@@ -1,0 +1,32 @@
+name: Terraform Apply
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  apply:
+    if: |
+      github.event.issue.pull_request &&
+      github.event.comment.body == 'apply'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
